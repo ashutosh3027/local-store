@@ -1,13 +1,31 @@
 const express = require("express");
+require("express-async-errors");
+const cors = require("cors");
 const morgan = require("morgan");
-const userRouter = require('./routes/userRoutes');
-const app = express();
-console.log(process.env.NODE_ENV); // for develeopment purpose only;
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev")); // log details of request
-}
-app.use(express.json()); // . It parses incoming requests with JSON payloads and is based on body-parser.
+const cookieParser = require("cookie-parser");
+const routes = require("./routes");
+const helmet = require("helmet");
+const compression = require("compression");
+const unknownEndpoint = require("./middleware/unKnownEndpoint");
+const { handleError } = require("./helpers/error");
 
-app.use('/api/v1/users', userRouter);
+const app = express();
+
+app.set("trust proxy", 1);
+app.use(cors({ credentials: true, origin: true }));
+app.use(express.json());
+app.use(morgan("dev"));
+app.use(compression());
+app.use(helmet());
+app.use(cookieParser());
+
+app.use("/api", routes);
+
+app.get("/", (req, res) =>
+  res.send("<h1 style='text-align: center'>Local Store API</h1>")
+);
+app.use(unknownEndpoint);
+app.use(handleError);
 
 module.exports = app;
+
